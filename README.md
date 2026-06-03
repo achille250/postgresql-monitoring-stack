@@ -70,9 +70,3 @@ psql -f sql/business_activity_monitoring.sql
 | [postgresql-ha-replication](https://github.com/achille250/postgresql-ha-replication) | Replication monitoring queries |
 | [postgresql-performance-tuning](https://github.com/achille250/postgresql-performance-tuning) | Slow queries, indexes |
 | [postgresql-security-rbac](https://github.com/achille250/postgresql-security-rbac) | Audit logging |
-
----
-
-## License
-
-MIT — see [LICENSE](LICENSE).
