@@ -1,0 +1,48 @@
+#!/bin/bash
+
+# === CONFIGURATION ===
+REMOTE_USER="pgbadger"
+REMOTE_HOST="CHANGE_ME_HOST"
+REMOTE_PORT="1010"
+INSTANCE="Postgres_PR_DKGL"
+REMOTE_LOG_DIR="/u02/log"
+LOCAL_LOG_DIR="/var/log/pgbadger/$INSTANCE"
+REPORT_DIR="/var/www/pgbadger/$INSTANCE"
+INSTANCE_DB="Dsacco_db Primary"
+
+# === SETUP DIRECTORIES ===
+mkdir -p "$LOCAL_LOG_DIR"
+mkdir -p "$REPORT_DIR"
+
+# === FIX PERMISSIONS ON ALL REMOTE LOG FILES ===
+echo "Fixing permissions on ALL remote log files..."
+ssh -p "$REMOTE_PORT" "$REMOTE_USER@$REMOTE_HOST" \
+    "sudo chmod o+r $REMOTE_LOG_DIR/postgresql-*.log" 2>/dev/null
+# === FIX PERMISSIONS ON LOG FILES FROM LAST 7 DAYS ===
+#echo "Fixing permissions on recent log files..."
+#for i in $(seq 0 6); do
+ #   DATE=$(date -d "-$i day" +%Y-%m--%d)
+  #  ssh -p "$REMOTE_PORT" "$REMOTE_USER@$REMOTE_HOST" \
+   #     "sudo find $REMOTE_LOG_DIR -name 'postgresql-${DATE}_*.log' -exec chmod o+r {} +" 2>/dev/null
+#done
+
+# === SYNC LOG FILES FROM LAST 7 DAYS ===
+echo "Syncing logs from last 7 days..."
+for i in $(seq 0 6); do
+    DATE=$(date -d "-$i day" +%Y-%m--%d)
+    rsync -az -e "ssh -p $REMOTE_PORT" \
+        "$REMOTE_USER@$REMOTE_HOST:$REMOTE_LOG_DIR/postgresql-${DATE}_*.log" \
+        "$LOCAL_LOG_DIR/" 2>/dev/null
+done
+
+# === CLEAN LOCAL LOGS OLDER THAN 7 DAYS ===
+find "$LOCAL_LOG_DIR" -type f -name 'postgresql-*.log' -mtime +7 -delete
+
+# === GENERATE PG BADGER REPORT ===
+echo "Running pgBadger for this week's report..."
+pgbadger "$LOCAL_LOG_DIR"/*.log \
+    --outdir "$REPORT_DIR" \
+    -o index.html \
+    --title "$INSTANCE_DB - This Week's Report"
+
+echo "✅ Weekly report updated: $REPORT_DIR/index.html"

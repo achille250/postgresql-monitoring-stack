@@ -1,4 +1,4 @@
-﻿# postgresql-monitoring-stack
+# postgresql-monitoring-stack
 
 Prometheus, Grafana, postgres_exporter, pgBadger & pgHero
 
